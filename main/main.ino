@@ -2,11 +2,13 @@
 // #define JOY_X A0
 
 // libraries
-#include <arduino>
+#include <arduino.h>
+#include <math.h>
 // pin definitions
 #define PHONES 9
 #define BUTTON_PIN 4
 #define JOY_X 0
+#define POTI_IN A3
 
 // variable definitions
 long val = 0;        // stores raw value from photocell
@@ -19,7 +21,7 @@ double normf = 0;    // normalized frequency
 int i = 0;           // loop dummy variable
 double factor = 0;   // scaling factor for calibration
 double shift = 0;    // shift for calibration
-long maxfreq = 1048; // maximum desired frequency after calibration
+long maxfreq = 2096; // maximum desired frequency after calibration
 long minfreq = 131;  // minimum desired frequency after calibration
 
 // magic numbers that make the intervals sound pleasing
@@ -33,8 +35,8 @@ void setup()
   Serial.begin(9600);
   pinMode(BUTTON_PIN, INPUT_PULLUP);
   delay(10);
-  factor = (double)(maxfreq - minfreq) / (double)(maxread - minread);
-  shift = factor * minread + minfreq;
+  factor = (double)(maxfreq - minfreq) / ((double)maxread - minread);
+  shift = minfreq;
 }
 
 void loop()
@@ -48,12 +50,15 @@ void loop()
 
   while (sw_on == 0)
   {
-    val = analogRead(JOY_X);  // read photocell
+    //val = analogRead(JOY_X);
+    val = maxread + 1 - (long)analogRead(POTI_IN);
+    //val = analogRead(POTI_IN);
+    val = pow(2, val * (10.0 / 1023.0));  // read photocell
     f = factor * val + shift; // this linearly maps the frequency to
-    Serial.print("VAL ");
-    Serial.print(digitalRead(BUTTON_PIN));
+    Serial.print("INPUT ");
+    Serial.print(val);
     Serial.print("\n");
-    tone(PHONES, f, 10); // this produces the tone signal
+    tone(PHONES, f, 20); // this produces the tone signal
     sw_on = digitalRead(BUTTON_PIN);
   }
 }
